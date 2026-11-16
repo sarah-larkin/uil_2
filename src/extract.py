@@ -10,12 +10,16 @@ def extract_data(base_url, token, action, function=None):
 
     url += f"&token={token}"
 
-    print(f"Calling {url}")
+    print(f"Calling: {url}")
 
     response = requests.get(url)
 
-    return response.json()
+    try:
+        return response.json()
+    except Exception:
+        print(response.text)
+        raise
 
-import requests
+
 
 

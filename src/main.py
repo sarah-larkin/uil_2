@@ -1,61 +1,52 @@
 import json
-import sys
-from pathlib import Path
+import os
+
 from datetime import datetime
+from pathlib import Path
+
+from dotenv import load_dotenv
 
 from extract import extract_data
 
+#Can update for other extractions: 
+ACTION = "getScan"
+FUNCTION = "InventoryManagement"
 
 def main():
 
-    if len(sys.argv) < 2:
-        print(
-            "Usage:\n"
-            "python src/main.py action [function]"
-        )
-        return
+    load_dotenv()
 
-    action = sys.argv[1]
-
-    function = None
-
-    if len(sys.argv) > 2:
-        function = sys.argv[2]
-
-    with open("config/settings.json") as f:
-        config = json.load(f)
+    base_url = os.getenv("VISCO_BASE_URL")
+    token = os.getenv("VISCO_TOKEN")
+    extract_folder = os.getenv("EXTRACT_FOLDER", "extracts")
+    row_limit = int(os.getenv("ROW_LIMIT", 20))
 
     data = extract_data(
-        base_url=config["base_url"],
-        token=config["token"],
-        action=action,
-        function=function
+        base_url=base_url,
+        token=token,
+        action=ACTION,
+        function=FUNCTION
     )
 
-    row_limit = config.get("row_limit", 20) #temp 
+    print(json.dumps(data, indent=2)[:3000])
 
-    output_dir = Path(config["extract_folder"])
+    output_dir = Path(extract_folder)
     output_dir.mkdir(exist_ok=True)
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-    name_parts = [action]
+    filename = f"{ACTION}_{FUNCTION}_{timestamp}.json"
 
-    if function:
-        name_parts.append(function)
-
-    filename = "_".join(name_parts)
-
-    output_file = output_dir / f"{filename}_{timestamp}.json"
+    output_file = output_dir / filename
 
     with open(output_file, "w") as f:
         json.dump(data, f, indent=4)
 
-    print(f"Saved to {output_file}")
+    print(f"Saved to: {output_file}")
 
 
 if __name__ == "__main__":
     main()
 
 
-
+#save CSV as well as json
